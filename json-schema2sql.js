@@ -53,10 +53,19 @@ const util = {
         };
     },
     toSQL : (name, schema, opts)=>{
+        let options = opts || {};
         let table = util.toSQLParts(name, schema, opts);
+        let serializeKeyword = 'SERIAL';
         return [`CREATE TABLE ${table.name}(\n    ${
             table.fields.map((field)=>{
-                return `${field.name} ${ field.sqlType }${(field.canBeNull?'':' NOT NULL')}`
+                let isPrimaryKey = (options.primaryKey && field.name === options.primaryKey);
+                return `${field.name} ${ field.sqlType }${
+                    (isPrimaryKey)?' PRIMARY KEY':''
+                }${
+                    (isPrimaryKey && options.serial)?' '+serializeKeyword:''
+                }${
+                    (field.canBeNull?'':' NOT NULL')
+                }`
             }).join(",\n    ")+"\n"
         })`];
     },
