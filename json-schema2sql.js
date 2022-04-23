@@ -56,17 +56,51 @@ const util = {
         let options = opts || {};
         let table = util.toSQLParts(name, schema, opts);
         let serializeKeyword = 'SERIAL';
-        return [`CREATE TABLE ${table.name}(\n    ${
+        let relations = [];
+        return [`CREATE TABLE "${table.name}"(\n    ${
             table.fields.map((field)=>{
                 let isPrimaryKey = (options.primaryKey && field.name === options.primaryKey);
-                return `${field.name} ${ field.sqlType }${
-                    (isPrimaryKey)?' PRIMARY KEY':''
-                }${
-                    (isPrimaryKey && options.serial)?' '+serializeKeyword:''
-                }${
-                    (field.canBeNull?'':' NOT NULL')
-                }`
-            }).join(",\n    ")+"\n"
+
+                let isForeignKey = (
+                    options.foreignKey &&
+                    options.foreignKey(name, field.name, '::')
+                );
+                if(['pg', 'postgress', 'postgresql'].indexOf(opts.dialect) !== -1){
+                    if(isForeignKey){
+                        if(['pg', 'postgress', 'postgresql'].indexOf(opts.dialect) !== -1){
+                            return `"${field.name}" ${ field.sqlType } REFERENCES ${
+                                isForeignKey.type
+                            }(${
+                                options.primaryKey
+                            })`;
+                        }
+                        return `"${field.name}" ${ field.sqlType }${
+                            (isPrimaryKey)?' PRIMARY KEY':''
+                        }${
+                            (isPrimaryKey && options.serial)?' '+serializeKeyword:''
+                        }${
+                            (field.canBeNull?'':' NOT NULL')
+                        }`;
+                    }
+                }else{
+                    serializeKeyword = 'AUTO INCREMENT';
+                    if(isPrimaryKey){
+                        relations.push(`PRIMARY KEY(${field.name})`)
+                    }
+                    if(isForeignKey){
+                        relations.push(`FOREIGN KEY(${field.name}) REFERENCES ${
+                            isForeignKey.type
+                        }(${
+                            options.primaryKey
+                        })`)
+                    }
+                    return `"${field.name}" ${ field.sqlType }${
+                        (field.canBeNull?'':' NOT NULL')
+                    }${
+                        (isPrimaryKey && options.serial)?' '+serializeKeyword:''
+                    }`;
+                }
+            }).concat(relations).join(",\n    ")+"\n"
         })`];
     },
     toSQLUpdates : (name, schemaNew, schemaOld, opts)=>{

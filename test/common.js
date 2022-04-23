@@ -26,10 +26,10 @@ const common = {
         "lastName": "Beggler",
         "age": 999
     },
-    create : `CREATE TABLE tableName(
-    firstName VARCHAR(255),
-    lastName VARCHAR(255),
-    age INTEGER
+    create : `CREATE TABLE "tableName"(
+    "firstName" VARCHAR(255),
+    "lastName" VARCHAR(255),
+    "age" INTEGER
 )`,
     insert : `INSERT INTO tableName(firstName, lastName, age) VALUES ("Ed", "Beggler", 999)`,
     update : {
